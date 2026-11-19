@@ -264,13 +264,6 @@
   .resume-doc .dates { color: #555; font-weight: 400; }
   .resume-doc ul { padding-left: 18px; margin: 3px 0; } .resume-doc li { margin: 2px 0; }
   @media (max-width: 600px) { .resume-doc { padding: 22px 18px; } }
-  @media print {
-    body.print-resume * { visibility: hidden; }
-    body.print-resume #resumeDoc, body.print-resume #resumeDoc * { visibility: visible; }
-    body.print-resume #resumeDoc { position: absolute; left: 0; top: 0; width: 100%; border: 0; padding: 0; box-shadow: none; }
-    body.print-resume::before { display: none; }
-    @page { margin: 14mm; }
-  }
 
   /* drawer + toast */
   .scrim { position: fixed; inset: 0; background: rgba(8,10,20,.45); z-index: 40; opacity: 0; pointer-events: none; transition: opacity .2s; }
@@ -1282,10 +1275,40 @@ function renderResume(r) {
   $("resumeOut").hidden = false;
   $("resumeOut").scrollIntoView({ behavior: "smooth", block: "start" });
 }
+// Print the resume from its own blank page, so no app name, URL or UI ends up in the PDF.
 $("printResume").onclick = () => {
-  document.body.classList.add("print-resume");
-  window.print();
-  setTimeout(() => document.body.classList.remove("print-resume"), 500);
+  const doc = $("resumeDoc");
+  const name = doc.querySelector("h1")?.textContent.trim();
+  const title = name ? `${name} - Resume` : "Resume";
+  const css = [...document.styleSheets].flatMap(s => { try { return [...s.cssRules]; } catch { return []; } })
+    .filter(r => r.selectorText?.includes(".resume-doc")).map(r => r.cssText).join("\n");
+  const frame = el("iframe", { style: "position:fixed;width:0;height:0;border:0;visibility:hidden" });
+  document.body.append(frame);
+  const w = frame.contentWindow;
+  w.document.open();
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title></title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>${css}
+      @page { size: A4; margin: 0; }
+      html, body { margin: 0; background: #fff; }
+      .resume-doc { border: 0; border-radius: 0; box-shadow: none; padding: 14mm 16mm;
+                    -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+      .resume-doc .job { break-inside: avoid; }
+      .resume-doc h4 { break-after: avoid; }
+    </style></head><body><div class="resume-doc"></div></body></html>`);
+  w.document.close();
+  w.document.title = title;
+  w.document.querySelector(".resume-doc").innerHTML = doc.innerHTML;
+  const oldTitle = document.title;
+  document.title = title;  // some browsers name the PDF file after the main page title
+  let cleaned = false;
+  const done = () => { if (cleaned) return; cleaned = true; document.title = oldTitle; frame.remove(); };
+  w.addEventListener("afterprint", () => setTimeout(done, 100));
+  // Wait for the font to load (max 2 s), then open the print dialog.
+  const link = w.document.querySelector("link");
+  new Promise(r => { link.onload = link.onerror = r; setTimeout(r, 2000); })
+    .then(() => w.document.fonts?.ready)
+    .then(() => { w.focus(); w.print(); setTimeout(done, 60000); });
 };
 $("copyResume").onclick = async () => { await navigator.clipboard.writeText($("resumeDoc").innerText); toast("Resume copied"); };
 
