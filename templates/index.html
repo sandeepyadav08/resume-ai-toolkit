@@ -832,7 +832,12 @@
     <!-- New resume -->
     <div class="stack" data-panel="resume" hidden>
       <div class="card">
-        <h3 class="card-title"><span class="ico"><svg class="i"><use href="#i-file"/></svg></span>A full resume tailored to this job</h3>
+        <h3 class="card-title"><span class="ico"><svg class="i"><use href="#i-file"/></svg></span>Your new resume, ready to send</h3>
+        <div class="seg" id="resumeMode" role="tablist">
+          <button type="button" class="on" data-rmode="job">Tailored to this job</button>
+          <button type="button" data-rmode="general">General ATS resume</button>
+        </div>
+        <p class="lead" id="resumeModeHint"></p>
         <div id="questionsBox">
           <p class="lead">Answer these so your resume has real numbers and details. Leave blank if unsure — that detail will simply be left out.</p>
           <div id="questions"></div>
@@ -1117,9 +1122,9 @@ const loader = {
 
 /* ---------- resume input ---------- */
 let mode = "upload";
-document.querySelectorAll(".seg button").forEach(b => b.onclick = () => {
+document.querySelectorAll("#form .seg button").forEach(b => b.onclick = () => {
   mode = b.dataset.mode;
-  document.querySelectorAll(".seg button").forEach(x => x.classList.toggle("on", x === b));
+  document.querySelectorAll("#form .seg button").forEach(x => x.classList.toggle("on", x === b));
   $("modeUpload").hidden = mode !== "upload"; $("modePaste").hidden = mode !== "paste";
 });
 const fileInput = $("file"), drop = $("drop");
@@ -1254,10 +1259,22 @@ function buildQuestions(d) {
   $("questions").replaceChildren(...qs.map((q, i) => el("div", { class: "q" },
     el("label", { for: "q" + i }, q), el("input", { type: "text", id: "q" + i, "data-q": q, placeholder: "Your answer (optional)" }))));
 }
+let resumeMode = "job";
+const RESUME_HINTS = {
+  job: "Uses the job's keywords and puts your most relevant skills and work first. Best when applying to this job.",
+  general: "A clean, ATS-friendly version of your resume that is not tied to one job. Good for job portals and sending to many companies.",
+};
+const setResumeMode = (m) => {
+  resumeMode = m;
+  document.querySelectorAll("#resumeMode button").forEach(x => x.classList.toggle("on", x.dataset.rmode === m));
+  $("resumeModeHint").textContent = RESUME_HINTS[m];
+};
+document.querySelectorAll("#resumeMode button").forEach(b => b.onclick = () => setResumeMode(b.dataset.rmode));
+setResumeMode("job");
 $("makeResume").onclick = () => busy($("makeResume"), $("resumeStatus"), ["Writing your resume...", "Formatting sections...", "Almost done..."], async () => {
   const answers = {};
   document.querySelectorAll("#questions input").forEach(i => { if (i.value.trim()) answers[i.dataset.q] = i.value.trim(); });
-  renderResume(await api("/rewrite", { resume_text: S.resume_text, job_text: S.job_text, answers }));
+  renderResume(await api("/rewrite", { resume_text: S.resume_text, job_text: S.job_text, answers, mode: resumeMode }));
 });
 function renderResume(r) {
   const sec = (title, ...body) => { const items = body.flat().filter(Boolean); return items.length ? [el("h4", {}, title), ...items] : []; };

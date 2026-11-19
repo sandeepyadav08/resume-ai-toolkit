@@ -282,24 +282,37 @@ class ResumeDoc(BaseModel):
 def rewrite():
     data = request.get_json(silent=True) or {}
     resume = field("resume_text", 100, "Please run an analysis first.")
-    job = field("job_text", 50, "Job description is missing.")
+    general = data.get("mode") == "general"  # general = ATS-friendly, not tied to one job
+    job = "" if general else field("job_text", 50, "Job description is missing.")
     answers = "\n".join(f"- {q} -> {a}" for q, a in (data.get("answers") or {}).items()
                         if str(a).strip())[:5000]
-    prompt = f"""Rewrite this candidate's resume so it is targeted at the job below.
+    if general:
+        goal = """Rewrite this candidate's resume as a strong, general, ATS-friendly resume
+that is NOT targeted at one specific job.
+- Headline and summary: describe the candidate's real main role and strengths.
+- Skills: group the strongest and most used skills first, using standard names
+  (e.g. "JavaScript", "React Native", "REST APIs") that ATS software recognises."""
+        job_block = ""
+    else:
+        goal = """Rewrite this candidate's resume so it is targeted at the job below.
+- Put the job's keywords first in skills, but only skills the resume shows.
+- If the candidate's background differs from the job (e.g. React Native resume, MERN job),
+  highlight the TRANSFERABLE skills and the most relevant work and projects first
+  (e.g. JavaScript, React, REST APIs, Node.js only if the resume shows them), and use the
+  job's wording for things the candidate really did. Never add a skill from the job
+  that the resume does not show."""
+        job_block = f"JOB DESCRIPTION:\n{job}\n\n"
+    prompt = f"""{goal}
 {HONESTY_RULES}
 - Use the candidate's ANSWERS below for any extra facts/numbers. If a detail was asked
   but not answered, leave that detail out completely. The output must contain NO square
   brackets and NO placeholders.
 - Keep every real job, project, degree and skill from the original resume.
-- Put the job's keywords first in skills, but only skills the resume shows.
 - Bullets: start with an action verb, one line each, 3-5 per job.
 - English only. contact = email | phone | city | LinkedIn/GitHub (only those in resume).
 - Leave lists empty if the resume has nothing for them.
 
-JOB DESCRIPTION:
-{job}
-
-ORIGINAL RESUME:
+{job_block}ORIGINAL RESUME:
 {resume}
 
 CANDIDATE'S ANSWERS:
