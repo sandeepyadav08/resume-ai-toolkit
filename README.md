@@ -2,8 +2,6 @@
 
 A free AI career assistant. Paste your resume (or upload a PDF) and a job description, and it helps you prepare for that job.
 
-Powered by the Google Gemini free tier. No account or database needed.
-
 ## Features
 
 | Feature | What you get |
@@ -69,7 +67,7 @@ On the free plan the app sleeps after 15 minutes without use. The next visit tak
 | `ValueError: No API key was provided` at start-up | `GEMINI_API_KEY` is missing. Add it to `.env` in this folder. |
 | `Address already in use` | Another copy is already running on port 8000. Stop it (`lsof -ti:8000 \| xargs kill`) or run on another port: `PORT=8001 python app.py`. |
 | "Wrong access code" | `ACCESS_CODE` is set. Enter the same value in the page when it asks. |
-| AI answers are slow or fail | The free Gemini tier is sometimes busy. Wait a minute and try again. |
+| AI answers are slow or fail | The AI service is sometimes busy. Wait a minute and try again. |
 | A job link can't be read | The site needs a login or blocks bots. Copy and paste the description instead. |
 
 ## Files
