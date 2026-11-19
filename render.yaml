@@ -1,0 +1,16 @@
+# Render.com free deploy: New + -> Blueprint -> pick this repo
+services:
+  - type: web
+    name: resume-matcher
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # AI replies can take 30-60 s, so allow long requests
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120 --workers 2
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.5-flash-lite
+      - key: ACCESS_CODE
+        sync: false
