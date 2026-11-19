@@ -49,6 +49,19 @@ Put these in a `.env` file in this folder (or in its parent folder). `.env` is g
 | `ACCESS_CODE` | No | A password visitors must enter before using the AI. Use it when the app is online so strangers don't use up your free quota. |
 | `PORT` | No | The port to run on. Default: `8000`. |
 
+## Deploy for free (Vercel)
+
+Recommended: the app stays awake, so pages open in a second or two.
+
+1. Push this folder to a GitHub repository (it can be private). Do **not** upload `.env`.
+2. Sign in to https://vercel.com with GitHub, choose **Add New → Project**, and import your repository. Vercel detects the Flask app in `app.py` automatically.
+3. Under **Environment Variables**, add:
+   - `GEMINI_API_KEY`: your Gemini key.
+   - `ACCESS_CODE`: a password for visitors. If you leave it empty, anyone with the link can use the app.
+4. Click **Deploy**. After a few minutes you get a link like `https://resume-ai-toolkit.vercel.app`.
+
+Every new push to GitHub redeploys the app automatically. If you change a variable later, redeploy from the Vercel dashboard so the change takes effect.
+
 ## Deploy for free (Render.com)
 
 1. Push this folder to a GitHub repository (it can be private). Do **not** upload `.env`.

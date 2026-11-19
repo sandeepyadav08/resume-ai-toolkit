@@ -48,7 +48,7 @@ ACCESS_CODE = os.environ.get("ACCESS_CODE", "").strip()  # optional password whe
 gemini = genai.Client(api_key=os.environ.get("GEMINI_API_KEY", ""),
                       http_options=types.HttpOptions(timeout=AI_TIMEOUT_MS))
 app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5 MB upload limit
+app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024  # 4 MB (Vercel allows at most 4.5 MB per request)
 
 
 class UserError(Exception):
@@ -66,7 +66,7 @@ def user_error(e: UserError):
 
 @app.errorhandler(413)
 def too_big(_):
-    return jsonify(error="The file is larger than 5 MB."), 413
+    return jsonify(error="The file is larger than 4 MB."), 413
 
 
 @app.before_request
