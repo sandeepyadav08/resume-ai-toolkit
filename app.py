@@ -45,8 +45,10 @@ RETRY_CODES = (404, 500, 502, 503, 504)
 AI_TIMEOUT_MS = 45_000  # per model; then the next model is tried
 ACCESS_CODE = os.environ.get("ACCESS_CODE", "").strip()  # optional password when online
 
-gemini = genai.Client(api_key=os.environ.get("GEMINI_API_KEY", ""),
-                      http_options=types.HttpOptions(timeout=AI_TIMEOUT_MS))
+# Without a key the site still opens; AI requests return a clear error instead of crashing.
+_api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+gemini = genai.Client(api_key=_api_key, http_options=types.HttpOptions(
+    timeout=AI_TIMEOUT_MS)) if _api_key else None
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024  # 4 MB (Vercel allows at most 4.5 MB per request)
 
@@ -80,6 +82,9 @@ def ask_ai(contents, schema: type[BaseModel]):
     """Call Gemini, get back a `schema` object. Tries the next model if one is busy."""
     config = types.GenerateContentConfig(response_mime_type="application/json",
                                          response_schema=schema)
+    if gemini is None:
+        raise UserError("The server has no GEMINI_API_KEY set. "
+                        "Add it in the hosting settings and redeploy.", 500)
     try:
         for i, model in enumerate(MODELS):
             last = i == len(MODELS) - 1
