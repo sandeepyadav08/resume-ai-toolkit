@@ -300,7 +300,21 @@ that is NOT targeted at one specific job.
   highlight the TRANSFERABLE skills and the most relevant work and projects first
   (e.g. JavaScript, React, REST APIs, Node.js only if the resume shows them), and use the
   job's wording for things the candidate really did. Never add a skill from the job
-  that the resume does not show."""
+  that the resume does not show.
+- Headline: the candidate's REAL role from the resume, plus 2-3 of their real skills that
+  this job needs, e.g. "React Native Developer | React · JavaScript · REST APIs".
+  Use the job's title only if the candidate has actually worked in that role."""
+        # Missing job skills the candidate ticked as "I know this" on the page.
+        raw = data.get("known_skills")
+        known = [s.strip()[:60] for s in (raw if isinstance(raw, list) else [])
+                 if isinstance(s, str) and s.strip()][:20]
+        if known:
+            goal += f"""
+- The candidate CONFIRMED they also know these skills, which the resume does not mention:
+  {", ".join(known)}.
+  Add them to the skills list, ordered by how much this job needs them. Do NOT invent
+  jobs, projects, bullets, numbers or experience for them, and keep them out of the
+  headline and the experience section."""
         job_block = f"JOB DESCRIPTION:\n{job}\n\n"
     prompt = f"""{goal}
 {HONESTY_RULES}
